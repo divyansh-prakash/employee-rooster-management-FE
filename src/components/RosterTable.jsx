@@ -16,30 +16,30 @@ export default function RosterTable() {
     return match ? `${match.name} (${match.time})` : `Unknown`;
   };
 
-  // Fetch shifts for selected date
-  const fetchShifts = async () => {
-    const [shiftsRes, leaveRes] = await Promise.all([
-      supabase.from('shifts').select('*').eq('date', selectedDate),
-      supabase.from('leave_status').select('*').eq('date', selectedDate).eq('is_on_leave', true)
-    ]);
-
-    if (shiftsRes.error || leaveRes.error) {
-      console.error('Error fetching data:', shiftsRes.error || leaveRes.error);
-      return;
-    }
-
-    // Filter out leave employees
-    const leaveEmployeeIds = leaveRes.data.map(l => l.employee_id);
-    const filteredShifts = shiftsRes.data.filter(shift => !leaveEmployeeIds.includes(shift.employee_id));
-
-    setShifts(filteredShifts);
-    setLeaves(leaveRes.data); // if needed for view mode
-  };
-
   // Realtime subscription
   useEffect(() => {
+    // Fetch shifts for selected date
+    const fetchShifts = async () => {
+      const [shiftsRes, leaveRes] = await Promise.all([
+        supabase.from('shifts').select('*').eq('date', selectedDate),
+        supabase.from('leave_status').select('*').eq('date', selectedDate).eq('is_on_leave', true)
+      ]);
+
+      if (shiftsRes.error || leaveRes.error) {
+        console.error('Error fetching data:', shiftsRes.error || leaveRes.error);
+        return;
+      }
+
+      // Filter out leave employees
+      const leaveEmployeeIds = leaveRes.data.map(l => l.employee_id);
+      const filteredShifts = shiftsRes.data.filter(shift => !leaveEmployeeIds.includes(shift.employee_id));
+
+      setShifts(filteredShifts);
+      setLeaves(leaveRes.data); // if needed for view mode
+    };
+
     fetchShifts();
-  
+
     const channel = supabase
       .channel('realtime-shifts')
       .on('postgres_changes', {
@@ -48,13 +48,13 @@ export default function RosterTable() {
         table: 'shifts',
       }, fetchShifts)
       .subscribe();
-  
+
     const handleShiftAdded = () => fetchShifts();
     const handleLeaveAdded = () => fetchShifts();
-  
+
     window.addEventListener('shift-added', handleShiftAdded);
     window.addEventListener('leave-added', handleLeaveAdded);
-  
+
     return () => {
       supabase.removeChannel(channel);
       window.removeEventListener('shift-added', handleShiftAdded);

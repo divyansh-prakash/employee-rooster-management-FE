@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { EMPLOYEES } from '../constants/employees';
 import { supabase } from '../lib/supabaseClient';
 import { rebalanceShifts } from '../utils/balanceShifts';
-import { SHIFT_PRIORITY } from '../constants/shiftPriority';
 
 export default function TrackLeaveForm() {
   const [leaveData, setLeaveData] = useState({

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { EMPLOYEES } from '../constants/employees';
 import { SHIFTS } from '../constants/shifts';
 import { supabase } from '../lib/supabaseClient';
+import { showToast } from '../services/toastService';
 
 export default function AddShiftForm() {
 
@@ -33,11 +34,12 @@ export default function AddShiftForm() {
     ]);
 
     if (error) {
-      alert('Error adding shift');
+      showToast('Error adding shift', 'ERROR');
       console.error(error);
     } else {
       setFormData({ employeeId: '', date: '', shiftType: '' });
       window.dispatchEvent(new CustomEvent('shift-added'));
+      showToast('Shift has been added successfully', 'SUCCESS');
     }
   };
 

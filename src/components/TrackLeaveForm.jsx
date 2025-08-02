@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { EMPLOYEES } from '../constants/employees';
 import { supabase } from '../lib/supabaseClient';
 import { rebalanceShifts } from '../utils/balanceShifts';
+import { showToast } from '../services/toastService';
 
 export default function TrackLeaveForm() {
   const [leaveData, setLeaveData] = useState({
@@ -32,7 +33,7 @@ export default function TrackLeaveForm() {
     ]);
 
     if (insertError) {
-      alert('Error adding leave');
+      showToast('Error adding leave', 'ERROR');
       console.error(insertError);
       return;
     }
@@ -48,7 +49,7 @@ export default function TrackLeaveForm() {
       console.error('Error fetching leave data', leaveError);
       return;
     }
-    // debugger
+    
     const leaveEmployeeIds = leaveRows.map(row => row.employee_id);
 
     // Step 3: Fetch all shift assignments for the date
@@ -83,22 +84,13 @@ export default function TrackLeaveForm() {
       });
     }    
 
-    // Clear old entries for that date first
-    // await supabase.from('shifts').delete().eq('date', date);
-
-    // Insert new updated shift assignments
-    // if (updates.length > 0) {
-    //   const { error: insertNewError } = await supabase.from('shifts').insert(updates);
-    //   if (insertNewError) {
-    //     console.error('Error updating shifts after rebalance', insertNewError);
-    //   }
-    // }
-
     // Trigger event for UI update
     window.dispatchEvent(new CustomEvent('leave-added'));
 
     // Reset form
     setLeaveData({ employeeId: '', date: '', reason: '' });
+
+    showToast('Leave has been added successfully', 'SUCCESS');
   };
 
   return (
@@ -119,7 +111,7 @@ export default function TrackLeaveForm() {
         <label htmlFor="leave-reason">Reason:</label>
         <input type="text" id="leave-reason" name="reason" required value={leaveData.reason} placeholder="e.g., Sick Leave" onChange={handleChange} />
 
-        <button type="submit">Track Leave</button>
+        <button type="submit">Add Leave</button>
       </form>
     </div>
   );

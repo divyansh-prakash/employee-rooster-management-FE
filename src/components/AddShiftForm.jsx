@@ -3,6 +3,8 @@ import { EMPLOYEES } from '../constants/employees';
 import { SHIFTS } from '../constants/shifts';
 import { supabase } from '../lib/supabaseClient';
 import { showToast } from '../services/toastService';
+import { HOLIDAYS } from '../constants/holidayList';
+import { getDayOfWeekMMDD } from '../utils/dateUtils';
 
 export default function AddShiftForm() {
 
@@ -20,10 +22,25 @@ export default function AddShiftForm() {
   };
 
   const handleSubmit = async (e) => {
+    let invalidReason = '';
     e.preventDefault();
 
     const { employeeId, date, shiftType } = formData;
-    console.log('Adding shift:', formData);
+    
+    const holidayDates = Object.keys(HOLIDAYS).map(key => HOLIDAYS[key].date);
+
+    if (holidayDates.includes(date)) {
+      invalidReason = 'holiday';
+    }
+
+    if (getDayOfWeekMMDD(date) === 'Saturday' || getDayOfWeekMMDD(date) === 'Sunday') {
+      invalidReason = 'weekend';
+    }
+
+    if (invalidReason) {
+      showToast(`Shift cannot be added on a ${invalidReason}`, 'ERROR');
+      return;
+    }
 
     const { error } = await supabase.from('shifts').insert([
       {

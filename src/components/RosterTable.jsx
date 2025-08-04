@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { EMPLOYEES } from '../constants/employees';
 import { SHIFTS } from '../constants/shifts';
+import HolidayModal from './HolidayModal';
 
 export default function RosterTable() {
   const [leaves, setLeaves] = useState([]);
   const [shifts, setShifts] = useState([]);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [viewMode, setViewMode] = useState('shift');
+  const [showModal, setShowModal] = useState(false);
 
   // Helpers
   const getEmployeeName = (id) => EMPLOYEES.find(emp => emp.id === id)?.name || id;
@@ -64,7 +66,11 @@ export default function RosterTable() {
 
   return (
     <section className="roster-container">
-      <h2>Weekly Roster</h2>
+      <div className="header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '2px solid #ccc', paddingBottom: '10px' }}>
+        <h2 style={{borderBottom: 'none', marginBottom: '0'}}>Roster Data</h2>
+        <button style={{ width: '153px', height: '40px'}} onClick={() => setShowModal(true)}>Show Holidays</button>
+        {showModal && <HolidayModal onClose={() => setShowModal(false)} />}
+      </div>
 
       {/* Date Picker and View Toggle */}
       <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -93,24 +99,32 @@ export default function RosterTable() {
 
       </div>
 
-      <p>Showing schedule for <strong>{new Date(selectedDate).toLocaleDateString()}</strong></p>
+      {/* <p>Showing schedule for <strong>{new Date(selectedDate).toLocaleDateString()}</strong></p> */}
 
       <table id="roster-table">
         <thead>
           <tr>
-            {viewMode === 'employee' ? (
+            {viewMode === 'employee' && (
               <>
                 <th>Employee</th>
                 <th>Schedule</th>
               </>
-            ) : (
+            )}
+            {viewMode === 'shift' && (
               <>
                 <th>Shift</th>
                 <th>Assigned Employees</th>
               </>
             )}
+            {viewMode === 'leave' && (
+              <>
+                <th>Employee</th>
+                <th>Reason</th>
+              </>
+            )}
           </tr>
         </thead>
+
         <tbody id="roster-body">
           {viewMode === 'employee' ? (
             shifts.length === 0 ? (
@@ -144,7 +158,7 @@ export default function RosterTable() {
               leaves.map(leave => (
                 <tr key={`${leave.employee_id}-${leave.date}`}>
                   <td>{getEmployeeName(leave.employee_id)}</td>
-                  <td>On Leave</td>
+                  <td>{leave.reason || 'On Leave'}</td>
                 </tr>
               ))
             )

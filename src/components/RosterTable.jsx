@@ -64,11 +64,32 @@ export default function RosterTable() {
     };
   }, [selectedDate]); // re-subscribe when date changes
 
+  const handleDeleteLeave = async (employeeId, date) => {
+    if (!window.confirm("Are you sure you want to delete this leave?")) return;
+
+    const { error } = await supabase
+      .from('leave_status')
+      .delete()
+      .eq('employee_id', employeeId)
+      .eq('date', date)
+      .eq('is_on_leave', true);
+
+    if (error) {
+      console.error("Error deleting leave:", error);
+      alert("Failed to delete leave.");
+      return;
+    }
+
+    // Refresh data
+    const event = new Event('leave-added');
+    window.dispatchEvent(event);
+  };
+
   return (
     <section className="roster-container">
       <div className="header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '2px solid #ccc', paddingBottom: '10px' }}>
-        <h2 style={{borderBottom: 'none', marginBottom: '0'}}>Roster Data</h2>
-        <button style={{ width: '153px', height: '40px'}} onClick={() => setShowModal(true)}>Show Holidays</button>
+        <h2 style={{ borderBottom: 'none', marginBottom: '0' }}>Roster Data</h2>
+        <button style={{ width: '153px', height: '40px' }} onClick={() => setShowModal(true)}>Show Holidays</button>
         {showModal && <HolidayModal onClose={() => setShowModal(false)} />}
       </div>
 
@@ -120,6 +141,7 @@ export default function RosterTable() {
               <>
                 <th>Employee</th>
                 <th>Reason</th>
+                <th>Actions</th>
               </>
             )}
           </tr>
@@ -153,12 +175,35 @@ export default function RosterTable() {
             })
           ) : (
             leaves.length === 0 ? (
-              <tr><td colSpan="2">No leaves on this day</td></tr>
+              <tr><td colSpan="3">No leaves on this day</td></tr>
             ) : (
               leaves.map(leave => (
                 <tr key={`${leave.employee_id}-${leave.date}`}>
                   <td>{getEmployeeName(leave.employee_id)}</td>
                   <td>{leave.reason || 'On Leave'}</td>
+                  <td>
+                    <span
+                      onClick={() => handleDeleteLeave(leave.employee_id, leave.date)}
+                      style={{
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '4px'
+                      }}
+                      title="Delete leave"
+                    >
+                      {/* Trash icon SVG */}
+                      <svg xmlns="http://www.w3.org/2000/svg"
+                        width="25"
+                        height="25"
+                        fill="red"
+                        viewBox="0 0 24 24">
+                        <path d="M3 6h18v2H3V6zm2 3h14v13H5V9zm5-6h4v2h-4V3z" />
+                      </svg>
+                    </span>
+                  </td>
+
                 </tr>
               ))
             )
